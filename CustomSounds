@@ -1,0 +1,452 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+-- ID bunyi
+local JUMP_ID = "rbxassetid://115680913237541"
+local WALK_ID = "rbxassetid://6929242058"
+
+-- 🛡️ Pemeriksa asal
+if not script:FindFirstChild("BangyanSignature") then
+	local tag = Instance.new("StringValue")
+	tag.Name = "BangyanSignature"
+	tag.Value = "Protected by Bangyan © 2025"
+	tag.Parent = script
+end
+
+task.spawn(function()
+	while task.wait(10) do
+		if not script:FindFirstChild("BangyanSignature") then
+			warn("⚠️ Skrip ini asalnya dibuat oleh Bangyan. Sila letak semula kredit asal.")
+		end
+	end
+end)
+
+-- ============ JUMP SOUND SETUP ============
+local oldJumpSound = character:FindFirstChild("Jump") or humanoid:FindFirstChild("Jump")
+if oldJumpSound then
+    oldJumpSound:Destroy()
+end
+
+local jumpSound = Instance.new("Sound")
+jumpSound.Name = "Jump"
+jumpSound.SoundId = JUMP_ID
+jumpSound.Volume = 1
+jumpSound.Looped = false
+jumpSound.Parent = rootPart
+
+-- ============ WALK SOUND SETUP ============
+local walkSound = Instance.new("Sound")
+walkSound.Name = "Footstep"
+walkSound.SoundId = WALK_ID
+walkSound.Volume = 1
+walkSound.Looped = true
+walkSound.PlaybackSpeed = 1
+walkSound.RollOffMaxDistance = 100
+walkSound.RollOffMinDistance = 10
+walkSound.Parent = rootPart
+
+-- ============ STATUS VARIABLES ============
+local jumpEnabled = true
+local walkEnabled = true
+local isWalking = false
+local isJumping = false
+local lastJumpTime = 0
+local MIN_JUMP_INTERVAL = 0.05
+
+local jumpConnection = nil
+local runConnection = nil
+local stateConnection = nil
+local heartbeatConnection = nil
+
+-- ============ JUMP FUNCTIONS ============
+local function onJump(jumping)
+    if jumping and jumpEnabled then
+        local currentTime = tick()
+        
+        if currentTime - lastJumpTime >= MIN_JUMP_INTERVAL then
+            lastJumpTime = currentTime
+            
+            if jumpSound.IsPlaying then
+                jumpSound:Stop()
+            end
+            
+            task.spawn(function()
+                jumpSound.TimePosition = 0
+                jumpSound:Play()
+            end)
+        end
+    end
+end
+
+-- ============ WALK FUNCTIONS ============
+local function ensureSoundPlaying()
+	if walkEnabled and isWalking and not isJumping then
+		if not walkSound.IsPlaying then
+			walkSound:Play()
+		end
+	elseif walkSound.IsPlaying then
+		walkSound:Stop()
+	end
+end
+
+local function handleWalking(speed)
+	if not walkEnabled then 
+		isWalking = false
+		if walkSound.IsPlaying then
+			walkSound:Stop()
+		end
+		return 
+	end
+	
+	if speed > 2 and humanoid.FloorMaterial ~= Enum.Material.Air then
+		isWalking = true
+		if not walkSound.IsPlaying and not isJumping then
+			walkSound:Play()
+		end
+	else
+		isWalking = false
+		if walkSound.IsPlaying then
+			walkSound:Stop()
+		end
+	end
+end
+
+local function handleStateChanged(oldState, newState)
+	if newState == Enum.HumanoidStateType.Jumping then
+		isJumping = true
+		if walkSound.IsPlaying then
+			walkSound:Stop()
+		end
+	elseif newState == Enum.HumanoidStateType.Landed then
+		isJumping = false
+		if isWalking and walkEnabled then
+			walkSound:Play()
+		end
+	elseif newState == Enum.HumanoidStateType.Freefall then
+		isJumping = true
+		if walkSound.IsPlaying then
+			walkSound:Stop()
+		end
+	end
+end
+
+-- ============ CONNECT EVENTS ============
+jumpConnection = humanoid.Jumping:Connect(onJump)
+runConnection = humanoid.Running:Connect(handleWalking)
+stateConnection = humanoid.StateChanged:Connect(handleStateChanged)
+heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(ensureSoundPlaying)
+
+-- ============ PLATFORM DETECTION ============
+local UserInputService = game:GetService("UserInputService")
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- ============ GUI SETUP ============
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SoundTogglePanel"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- ============ MAIN TOGGLE BUTTON ============
+local toggleContainer = Instance.new("Frame")
+toggleContainer.Name = "ToggleContainer"
+toggleContainer.Size = isMobile and UDim2.new(0, 36, 0, 36) or UDim2.new(0, 32, 0, 32)
+toggleContainer.Position = UDim2.new(0, 10, 0, 10)
+toggleContainer.BackgroundTransparency = 1
+toggleContainer.Parent = screenGui
+
+local containerCorner = Instance.new("UICorner")
+containerCorner.CornerRadius = isMobile and UDim.new(0, 12) or UDim.new(0, 10)
+containerCorner.Parent = toggleContainer
+
+-- Minimal stroke effect instead of shadow
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0, 0, 0)
+stroke.Thickness = 1
+stroke.Transparency = 0.5
+stroke.Parent = toggleContainer
+
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "MainToggleBtn"
+toggleButton.Size = UDim2.new(1, 0, 1, 0)
+toggleButton.Position = UDim2.new(0, 0, 0, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "👣"
+toggleButton.TextSize = isMobile and 20 or 18
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.ZIndex = 10
+toggleButton.Parent = toggleContainer
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = isMobile and UDim.new(0, 12) or UDim.new(0, 10)
+buttonCorner.Parent = toggleButton
+
+-- ============ PANEL MENU ============
+local menuPanel = Instance.new("Frame")
+menuPanel.Name = "MenuPanel"
+menuPanel.Size = isMobile and UDim2.new(0, 100, 0, 72) or UDim2.new(0, 86, 0, 62)
+menuPanel.Position = isMobile and UDim2.new(0, 50, 0, 10) or UDim2.new(0, 45, 0, 10)
+menuPanel.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
+menuPanel.BorderSizePixel = 0
+menuPanel.Visible = false
+menuPanel.ZIndex = 9
+menuPanel.Parent = screenGui
+
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 10)
+menuCorner.Parent = menuPanel
+
+-- Menu stroke
+local menuStroke = Instance.new("UIStroke")
+menuStroke.Color = Color3.fromRGB(0, 0, 0)
+menuStroke.Thickness = 1
+menuStroke.Transparency = 0.5
+menuStroke.Parent = menuPanel
+
+-- ============ MENU BUTTONS ============
+local function createMenuButton(name, icon, yPos)
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = isMobile and UDim2.new(1, -8, 0, 26) or UDim2.new(1, -8, 0, 22)
+	btn.Position = UDim2.new(0, 4, 0, yPos)
+	btn.BackgroundColor3 = Color3.fromRGB(52, 73, 94)
+	btn.BorderSizePixel = 0
+	btn.TextSize = isMobile and 10 or 9
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Font = Enum.Font.GothamSemibold
+	btn.ZIndex = 10
+	btn.Parent = menuPanel
+	
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0, 5)
+	btnCorner.Parent = btn
+	
+	return btn
+end
+
+local jumpBtn = createMenuButton("JumpBtn", "🔊", 3)
+jumpBtn.Text = "UNYAH"
+jumpBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+
+local walkBtn = createMenuButton("WalkBtn", "👣", isMobile and 32 or 28)
+walkBtn.Text = "SQUID"
+walkBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+
+-- ============ MENU STATE MANAGEMENT ============
+local menuOpen = false
+local function toggleMenu()
+	menuOpen = not menuOpen
+	menuPanel.Visible = menuOpen
+	
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	
+	if menuOpen then
+		menuPanel.Position = isMobile and UDim2.new(0, 50, 0, 10) or UDim2.new(0, 45, 0, 10)
+		local tween = tweenService:Create(toggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)})
+		tween:Play()
+	else
+		local tween = tweenService:Create(toggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(52, 152, 219)})
+		tween:Play()
+	end
+end
+
+-- ============ BUTTON EVENTS ============
+toggleButton.MouseButton1Click:Connect(toggleMenu)
+
+toggleButton.MouseButton1Down:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	
+	-- Animasi rotation kaki tanpa ubah ukuran
+	local rotateAnim = tweenService:Create(toggleButton, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 20})
+	rotateAnim:Play()
+end)
+
+toggleButton.MouseButton1Up:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	
+	-- Reset rotation
+	local resetAnim = tweenService:Create(toggleButton, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 0})
+	resetAnim:Play()
+end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+	jumpEnabled = not jumpEnabled
+	jumpBtn.Text = "UNYAH"
+	
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local newColor = jumpEnabled and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+	local tween = tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = newColor})
+	tween:Play()
+end)
+
+walkBtn.MouseButton1Click:Connect(function()
+	walkEnabled = not walkEnabled
+	walkBtn.Text = "SQUID"
+	
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local newColor = walkEnabled and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+	local tween = tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = newColor})
+	tween:Play()
+	
+	if not walkEnabled and walkSound.IsPlaying then
+		walkSound:Stop()
+	end
+end)
+
+-- ============ HOVER EFFECTS ============
+jumpBtn.MouseEnter:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = tweenService:Create(jumpBtn, tweenInfo, {BackgroundTransparency = 0.1})
+	tween:Play()
+end)
+
+jumpBtn.MouseLeave:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = tweenService:Create(jumpBtn, tweenInfo, {BackgroundTransparency = 0})
+	tween:Play()
+end)
+
+walkBtn.MouseEnter:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = tweenService:Create(walkBtn, tweenInfo, {BackgroundTransparency = 0.1})
+	tween:Play()
+end)
+
+walkBtn.MouseLeave:Connect(function()
+	local tweenService = game:GetService("TweenService")
+	local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = tweenService:Create(walkBtn, tweenInfo, {BackgroundTransparency = 0})
+	tween:Play()
+end)
+
+-- ============ DRAG UNTUK PC ============
+if not isMobile then
+	local dragging = false
+	local dragInput, mousePos, framePos
+
+	toggleContainer.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 and not menuOpen then
+			dragging = true
+			mousePos = input.Position
+			framePos = toggleContainer.Position
+			
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	toggleContainer.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - mousePos
+			toggleContainer.Position = UDim2.new(
+				framePos.X.Scale,
+				framePos.X.Offset + delta.X,
+				framePos.Y.Scale,
+				framePos.Y.Offset + delta.Y
+			)
+		end
+	end)
+end
+
+-- ============ RESPAWN CLEANUP ============
+player.CharacterAdded:Connect(function(newChar)
+	character = newChar
+	humanoid = character:WaitForChild("Humanoid")
+	rootPart = character:WaitForChild("HumanoidRootPart")
+	
+	-- Clear old sounds
+	if jumpSound then
+		jumpSound:Destroy()
+	end
+	if walkSound then
+		walkSound:Destroy()
+	end
+	
+	-- Recreate sounds
+	jumpSound = Instance.new("Sound")
+	jumpSound.Name = "Jump"
+	jumpSound.SoundId = JUMP_ID
+	jumpSound.Volume = 1
+	jumpSound.Looped = false
+	jumpSound.Parent = rootPart
+	
+	walkSound = Instance.new("Sound")
+	walkSound.Name = "Footstep"
+	walkSound.SoundId = WALK_ID
+	walkSound.Volume = 1
+	walkSound.Looped = true
+	walkSound.PlaybackSpeed = 1
+	walkSound.RollOffMaxDistance = 100
+	walkSound.RollOffMinDistance = 10
+	walkSound.Parent = rootPart
+	
+	-- Reset states
+	lastJumpTime = 0
+	isWalking = false
+	isJumping = false
+	
+	-- Reconnect events
+	if jumpConnection then
+		jumpConnection:Disconnect()
+	end
+	if runConnection then
+		runConnection:Disconnect()
+	end
+	if stateConnection then
+		stateConnection:Disconnect()
+	end
+	if heartbeatConnection then
+		heartbeatConnection:Disconnect()
+	end
+	
+	jumpConnection = humanoid.Jumping:Connect(onJump)
+	runConnection = humanoid.Running:Connect(handleWalking)
+	stateConnection = humanoid.StateChanged:Connect(handleStateChanged)
+	heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(ensureSoundPlaying)
+	
+	-- Close menu on respawn
+	menuOpen = false
+	menuPanel.Visible = false
+end)
+
+-- ============ CLEANUP ON DEATH ============
+player.CharacterRemoving:Connect(function()
+	if jumpConnection then
+		jumpConnection:Disconnect()
+	end
+	if runConnection then
+		runConnection:Disconnect()
+	end
+	if stateConnection then
+		stateConnection:Disconnect()
+	end
+	if heartbeatConnection then
+		heartbeatConnection:Disconnect()
+	end
+	if jumpSound then
+		jumpSound:Destroy()
+	end
+	if walkSound then
+		walkSound:Destroy()
+	end
+end)
