@@ -26,7 +26,7 @@ end)
 -- ============ JUMP SOUND SETUP ============
 local oldJumpSound = character:FindFirstChild("Jump") or humanoid:FindFirstChild("Jump")
 if oldJumpSound then
-    oldJumpSound:Destroy()
+	oldJumpSound:Destroy()
 end
 
 local jumpSound = Instance.new("Sound")
@@ -62,25 +62,36 @@ local heartbeatConnection = nil
 
 -- ============ JUMP FUNCTIONS ============
 local function onJump(jumping)
-    if jumping and jumpEnabled then
-        local currentTime = tick()
-        
-        if currentTime - lastJumpTime >= MIN_JUMP_INTERVAL then
-            lastJumpTime = currentTime
-            
-            if jumpSound.IsPlaying then
-                jumpSound:Stop()
-            end
-            
-            task.spawn(function()
-                jumpSound.TimePosition = 0
-                jumpSound:Play()
-            end)
-        end
-    end
+	if jumping and jumpEnabled then
+		local currentTime = tick()
+		
+		if currentTime - lastJumpTime >= MIN_JUMP_INTERVAL then
+			lastJumpTime = currentTime
+			
+			if jumpSound.IsPlaying then
+				jumpSound:Stop()
+			end
+			
+			task.spawn(function()
+				jumpSound.TimePosition = 0
+				jumpSound:Play()
+			end)
+		end
+	end
 end
 
 -- ============ WALK FUNCTIONS ============
+local function updateWalkSpeed(speed)
+	if walkEnabled and speed > 2 then
+		-- Sesuaikan kelajuan bunyi mengikut kelajuan berlari
+		-- WalkSpeed biasa = 16, formula: speed / 16 untuk mendapat multiplier
+		local speedMultiplier = math.clamp(speed / 16, 0.5, 2.5)
+		walkSound.PlaybackSpeed = speedMultiplier
+	else
+		walkSound.PlaybackSpeed = 1
+	end
+end
+
 local function ensureSoundPlaying()
 	if walkEnabled and isWalking and not isJumping then
 		if not walkSound.IsPlaying then
@@ -102,6 +113,7 @@ local function handleWalking(speed)
 	
 	if speed > 2 and humanoid.FloorMaterial ~= Enum.Material.Air then
 		isWalking = true
+		updateWalkSpeed(speed)
 		if not walkSound.IsPlaying and not isJumping then
 			walkSound:Play()
 		end
@@ -122,6 +134,7 @@ local function handleStateChanged(oldState, newState)
 	elseif newState == Enum.HumanoidStateType.Landed then
 		isJumping = false
 		if isWalking and walkEnabled then
+			updateWalkSpeed(humanoid.WalkSpeed)
 			walkSound:Play()
 		end
 	elseif newState == Enum.HumanoidStateType.Freefall then
