@@ -1,189 +1,119 @@
-# Sound Toggle System for Roblox
+# Roblox Custom Sound Script
 
-A comprehensive sound effects management system for Roblox that allows players to toggle jump and walk sound effects with an elegant, compact UI.
+A comprehensive Roblox Lua script that allows players to customize their character's jump and footstep sounds with an intuitive GUI menu system.
 
 ## Features
 
-### 🎵 Sound Effects
-- **UNYAH Sound** - Custom jump sound effect with spam protection
-- **SQUID Sound** - Walk/footstep sound effect that syncs with movement
-- Smooth sound management with proper state handling
+✨ **Custom Sound Selection**
+- Jump sound customization (UNYAH button)
+- Multiple walk sound options:
+  - SQUID (Default Squid sound)
+  - SPONGEBOB (SpongeBob walk sound)
+  - MR. KRAB (Mr. Krabs walk sound)
 
-### 👣 User Interface
-- **Compact Toggle Button** - Minimalist 32x32px (PC) / 36x36px (Mobile) button
-- **Pop-up Menu Panel** - Clean menu with UNYAH and SQUID toggles
-- **Color-coded Status** - Green (ON) / Red (OFF) visual feedback
-- **Responsive Design** - Optimized for both PC and Mobile platforms
+🎵 **Smart Sound Management**
+- Toggle custom sounds on/off with the OFF button
+- Default character sounds automatically activate when custom sounds are disabled
+- Toggle individual jump sound independently
+- Smooth fade-in/out transitions between custom and default sounds
 
-### ✨ Animations & Effects
-- Logo rotation animation on button click (20° rotation)
-- Smooth color transitions with tween animations
-- Hover effects on menu buttons (transparency change)
-- No gameplay obstruction - fully minimalist design
+💾 **Persistent Settings**
+- All settings are saved and restored after respawn or death
+- Selected walk sound persists across character deaths
+- Button states remain unchanged
 
-### 📍 Positioning
-- Fixed position at top-left corner (10px padding)
-- Menu panel positioned beside the toggle button
-- Draggable on PC (when menu is closed)
-- Touch-friendly sizing on mobile devices
+🎮 **User-Friendly Interface**
+- Clean, responsive menu panel
+- Color-coded buttons (Green = Active, Red = Inactive)
+- Smooth tween animations and hover effects
+- Mobile and PC compatible
+- Non-draggable button on PC for stability
+
+⚙️ **Optimized Performance**
+- Efficient event handling
+- Proper cleanup on character death
+- Memory-safe sound management
+- No performance impact on gameplay
 
 ## Installation
 
-### For Roblox Studio
+1. **Create a LocalScript** in `StarterPlayer > StarterCharacterScripts` or `StarterPlayer > StarterPlayerScripts`
+2. **Copy the entire script** from the source code
+3. **Paste it into the LocalScript**
+4. **Play the game** and enjoy!
 
-1. **Open your game** in Roblox Studio
-2. **Locate** `StarterPlayer > StarterCharacterScripts` or `StarterPlayer > StarterPlayerScripts`
-3. **Insert a new LocalScript**
-4. **Paste the entire script** into the LocalScript
-5. **Test your game** - The UI should appear at the top-left corner
+## How to Use
 
-### Requirements
-- Roblox game place
-- LocalScript execution environment
-- Access to player's PlayerGui
+### Main Toggle Button 👣
+- Click the footstep button in the top-left corner to open/close the menu panel
+- Button color changes to green when menu is open
 
-## Usage
+### Menu Options
 
-### Toggle Button (👣)
-- **Click** to open/close the menu panel
-- **Animation** - Logo rotates 20° when clicked
-- **Color Change** - Highlights when menu is open
+**UNYAH Button** - Toggle jump sound on/off
+- Green = Jump sound enabled
+- Red = Jump sound disabled (default sound will play)
 
-### UNYAH Button (Jump Sound)
-- **Click** to toggle jump sound ON/OFF
-- **Green** = Sound enabled
-- **Red** = Sound disabled
-- **Affects** only jump actions
+**SQUID Button** - Select Squid walk sound
+- Green = Currently active
+- Red = Inactive
 
-### SQUID Button (Walk Sound)
-- **Click** to toggle walk sound ON/OFF
-- **Green** = Sound enabled
-- **Red** = Sound disabled
-- **Affects** only walking/movement
+**SPONGEBOB Button** - Select SpongeBob walk sound
+- Green = Currently active
+- Red = Inactive
 
-## Configuration
+**MR. KRAB Button** - Select Mr. Krabs walk sound
+- Green = Currently active
+- Red = Inactive
 
-### Customize Sound IDs
+**OFF Button** - Toggle all custom sounds
+- Green = All custom sounds OFF (default sounds active)
+- Red = All custom sounds ON (custom sounds active)
+- When OFF is active, other buttons are disabled for better control
 
-Edit the ID values in the script:
+## Sound IDs
 
-```lua
-local JUMP_ID = "rbxassetid://115680913237541"  -- Change to your jump sound
-local WALK_ID = "rbxassetid://6929242058"       -- Change to your walk sound
-```
+| Sound | ID |
+|-------|-----|
+| Jump | `rbxassetid://115680913237541` |
+| Squid Walk | `rbxassetid://6929242058` |
+| SpongeBob Walk | `rbxassetid://5948749731` |
+| Mr. Krabs Walk | `rbxassetid://3426632334` |
 
-### Adjust Button Position
+## Customization
 
-Modify the position in the script:
-
-```lua
-toggleContainer.Position = UDim2.new(0, 10, 0, 10)  -- X: 10px, Y: 10px from top-left
-```
-
-### Change Button Size
-
-Adjust sizes for different screen scales:
+To add your own sounds, modify the sound ID variables at the top of the script:
 
 ```lua
--- PC Size
-toggleContainer.Size = UDim2.new(0, 32, 0, 32)
-
--- Mobile Size
-toggleContainer.Size = UDim2.new(0, 36, 0, 36)
+local JUMP_ID = "rbxassetid://YOUR_JUMP_SOUND_ID"
+local WALK_ID = "rbxassetid://YOUR_WALK_SOUND_ID"
+local SPONGEBOB_WALK_ID = "rbxassetid://YOUR_SOUND_ID"
+local MRKRAB_WALK_ID = "rbxassetid://YOUR_SOUND_ID"
 ```
 
-## Technical Details
-
-### Sound Management
-- Minimum jump interval: 50ms (spam prevention)
-- Walk sound loops automatically while moving
-- Sounds stop when jumping or falling
-- Auto-resume walk sound after landing
-
-### Platform Detection
-```lua
-local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-```
-
-### State Tracking
-- `jumpEnabled` - Toggle jump sound status
-- `walkEnabled` - Toggle walk sound status
-- `isWalking` - Current walking state
-- `isJumping` - Current jumping state
-- `menuOpen` - Menu panel visibility
-
-## Responsive Breakpoints
-
-### PC (Desktop)
-- Button Size: 32x32px
-- Button Icon Size: 18
-- Menu Size: 86x62px
-- Menu Button Height: 22px
-- Menu Button Text Size: 9
-
-### Mobile
-- Button Size: 36x36px
-- Button Icon Size: 20
-- Menu Size: 100x72px
-- Menu Button Height: 26px
-- Menu Button Text Size: 10
-
-## Colors
-
-| Element | Color | RGB |
-|---------|-------|-----|
-| Toggle Button (Normal) | Blue | (52, 152, 219) |
-| Toggle Button (Menu Open) | Green | (46, 204, 113) |
-| Menu Background | Dark Gray | (44, 62, 80) |
-| Menu Button (ON) | Green | (46, 204, 113) |
-| Menu Button (OFF) | Red | (231, 76, 60) |
-| Button Background (Hover) | Dark Slate | (52, 73, 94) |
-
-## Events & Callbacks
-
-### Jump Sound
-- Triggered on humanoid jump
-- Respects jump interval limit
-- Stops previous sound before playing new one
-
-### Walk Sound
-- Triggered when speed > 2 studs/second
-- Only plays on ground (not in air)
-- Automatically stops on jump
-
-### Character Respawn
-- Cleans up old sounds
-- Recreates sound instances
-- Reconnects all event handlers
-- Closes menu panel
-
-## Browser Storage Restriction
-
-⚠️ **Note**: This script uses in-memory state only. No localStorage or sessionStorage is used as they are not supported in Claude.ai artifacts. For persistent data, implement custom save system.
+Then create corresponding buttons following the existing button creation pattern.
 
 ## Credits
 
-- **Original Concept**: Bangyan © 2025
-- **Enhancements**: Sound management & UI optimization
-- **Platform Support**: PC & Mobile optimized
-
-## Troubleshooting
-
-### Sounds Not Playing?
-1. Check sound IDs are valid
-2. Verify audio is enabled in Roblox settings
-3. Check humanoid state for Jump/Walk
-
-### UI Not Appearing?
-1. Ensure LocalScript is in correct location
-2. Check PlayerGui accessibility
-3. Verify screen resolution is adequate
-
-### Animation Not Working?
-1. Check TweenService availability
-2. Verify Enum.EasingStyle is supported
-3. Test on supported Roblox client version
+- **Original Creator**: Bangyan
+- **Custom by**: ItoRenz00
 
 ## License
 
-This script is provided as-is for use in Roblox games. Maintain credit to original creator.
+This script is protected by Bangyan. Please maintain proper attribution if you modify or redistribute this script.
+
+## Support
+
+If you encounter any issues:
+1. Ensure the script is placed in the correct location
+2. Check that all sound IDs are valid
+3. Make sure your game has sound enabled
+4. Verify the script has proper permissions
+
+## Version History
+
+**v1.0** (Current)
+- Initial release with full feature set
+- 4 walk sound options
+- Persistent settings
+- Mobile and PC support
