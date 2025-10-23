@@ -1,119 +1,178 @@
 # Roblox Custom Sound Script
 
-A comprehensive Roblox Lua script that allows players to customize their character's jump and footstep sounds with an intuitive GUI menu system.
+A customizable sound replacement script for Roblox that allows players to change their jump and walking sounds with a user-friendly GUI.
 
-## Features
+## 🎵 Features
 
-✨ **Custom Sound Selection**
-- Jump sound customization (UNYAH button)
-- Multiple walk sound options:
-  - SQUID (Default Squid sound)
-  - SPONGEBOB (SpongeBob walk sound)
-  - MR. KRAB (Mr. Krabs walk sound)
+- **Custom Jump Sounds**: Replace default jump sound with custom audio
+- **Multiple Walk Sound Options**:
+  - Squidward Walk
+  - SpongeBob Walk
+  - Mr. Krabs Walk
+- **Mobile-Friendly**: Responsive GUI that works on all devices
+- **Persistent Settings**: Your preferences save across respawns
+- **Smooth Animations**: Professional UI transitions and effects
+- **Easy Toggle**: Quick access button with expandable menu
+- **Default Sound Override**: Automatically disables default Roblox sounds when custom sounds are active
 
-🎵 **Smart Sound Management**
-- Toggle custom sounds on/off with the OFF button
-- Default character sounds automatically activate when custom sounds are disabled
-- Toggle individual jump sound independently
-- Smooth fade-in/out transitions between custom and default sounds
+## 📋 Requirements
 
-💾 **Persistent Settings**
-- All settings are saved and restored after respawn or death
-- Selected walk sound persists across character deaths
-- Button states remain unchanged
+- Roblox game environment
+- LocalScript execution (client-side)
+- Audio asset permissions
 
-🎮 **User-Friendly Interface**
-- Clean, responsive menu panel
-- Color-coded buttons (Green = Active, Red = Inactive)
-- Smooth tween animations and hover effects
-- Mobile and PC compatible
-- Non-draggable button on PC for stability
+## 🚀 Installation
 
-⚙️ **Optimized Performance**
-- Efficient event handling
-- Proper cleanup on character death
-- Memory-safe sound management
-- No performance impact on gameplay
+1. Copy the entire script from `sound_script.lua`
+2. Paste it into a LocalScript in your Roblox game
+3. Place the LocalScript in:
+   - `StarterPlayer` > `StarterCharacterScripts`, or
+   - `StarterPlayer` > `StarterPlayerScripts`
 
-## Installation
+## 🎮 Usage
 
-1. **Create a LocalScript** in `StarterPlayer > StarterCharacterScripts` or `StarterPlayer > StarterPlayerScripts`
-2. **Copy the entire script** from the source code
-3. **Paste it into the LocalScript**
-4. **Play the game** and enjoy!
+### In-Game Controls
 
-## How to Use
+1. **Main Button** (👣): Click to open/close the sound menu
+2. **UNYAH**: Toggle custom jump sound on/off
+3. **SQUID**: Use Squidward walking sound
+4. **SPONGEBOB**: Use SpongeBob walking sound
+5. **MR. KRAB**: Use Mr. Krabs walking sound
+6. **OFF**: Disable all custom sounds (restore default Roblox sounds)
 
-### Main Toggle Button 👣
-- Click the footstep button in the top-left corner to open/close the menu panel
-- Button color changes to green when menu is open
+### Button Colors
 
-### Menu Options
+- **Green**: Active/Enabled
+- **Red**: Inactive/Disabled
 
-**UNYAH Button** - Toggle jump sound on/off
-- Green = Jump sound enabled
-- Red = Jump sound disabled (default sound will play)
+## 🔧 Customization
 
-**SQUID Button** - Select Squid walk sound
-- Green = Currently active
-- Red = Inactive
+### Changing Sound IDs
 
-**SPONGEBOB Button** - Select SpongeBob walk sound
-- Green = Currently active
-- Red = Inactive
-
-**MR. KRAB Button** - Select Mr. Krabs walk sound
-- Green = Currently active
-- Red = Inactive
-
-**OFF Button** - Toggle all custom sounds
-- Green = All custom sounds OFF (default sounds active)
-- Red = All custom sounds ON (custom sounds active)
-- When OFF is active, other buttons are disabled for better control
-
-## Sound IDs
-
-| Sound | ID |
-|-------|-----|
-| Jump | `rbxassetid://115680913237541` |
-| Squid Walk | `rbxassetid://6929242058` |
-| SpongeBob Walk | `rbxassetid://5948749731` |
-| Mr. Krabs Walk | `rbxassetid://3426632334` |
-
-## Customization
-
-To add your own sounds, modify the sound ID variables at the top of the script:
+Locate this section in the script:
 
 ```lua
-local JUMP_ID = "rbxassetid://YOUR_JUMP_SOUND_ID"
-local WALK_ID = "rbxassetid://YOUR_WALK_SOUND_ID"
-local SPONGEBOB_WALK_ID = "rbxassetid://YOUR_SOUND_ID"
-local MRKRAB_WALK_ID = "rbxassetid://YOUR_SOUND_ID"
+local JUMP_ID = "rbxassetid://115680913237541"
+local WALK_ID = "rbxassetid://6929242058"
+local SPONGEBOB_WALK_ID = "rbxassetid://5948749731"
+local MRKRAB_WALK_ID = "rbxassetid://3426632334"
 ```
 
-Then create corresponding buttons following the existing button creation pattern.
+Replace the asset IDs with your own Roblox audio asset IDs.
 
-## Credits
+### Adjusting GUI Position
 
-- **Original Creator**: Bangyan
-- **Custom by**: ItoRenz00
+To change the button position, modify:
 
-## License
+```lua
+toggleContainer.Position = UDim2.new(0, 10, 0, 10)
+```
 
-This script is protected by Bangyan. Please maintain proper attribution if you modify or redistribute this script.
+Change the `10, 10` values to move the button (X offset, Y offset).
 
-## Support
+### Button Size
 
-If you encounter any issues:
-1. Ensure the script is placed in the correct location
-2. Check that all sound IDs are valid
-3. Make sure your game has sound enabled
-4. Verify the script has proper permissions
+To adjust button size:
 
-## Version History
+```lua
+toggleContainer.Size = UDim2.new(0, 32, 0, 32)
+```
 
-**v1.0** (Current)
-- Initial release with full feature set
-- 4 walk sound options
-- Persistent settings
-- Mobile and PC support
+## 🛠️ Technical Details
+
+### Sound Management
+
+- Custom sounds automatically override default Roblox sounds
+- Walking sounds loop seamlessly while moving
+- Jump sounds play with debounce to prevent spam
+- Sounds stop appropriately during jumping/falling states
+
+### State Persistence
+
+The script saves these settings across respawns:
+- Jump sound enabled/disabled
+- Current walk sound selection
+- All sounds enabled/disabled state
+
+### Performance Optimization
+
+- Efficient event handling with proper cleanup
+- Smooth animations using TweenService
+- Minimal overhead with Heartbeat connection for sound monitoring
+
+## 📝 Code Structure
+
+```
+├── Player References
+├── Sound IDs Configuration
+├── Script Protection
+├── Default Sound Management
+├── Custom Sound Setup
+├── State Variables
+├── Event Handlers
+│   ├── Jump Handler
+│   ├── Walk Handlers
+│   └── State Change Handler
+├── GUI Creation
+│   ├── Toggle Button
+│   ├── Menu Panel
+│   └── Menu Buttons
+├── Button Events
+├── Hover Effects
+├── Respawn Handler
+└── Cleanup Functions
+```
+
+## 🐛 Troubleshooting
+
+### Sounds Not Playing
+
+1. Verify audio asset IDs are correct and published
+2. Check audio privacy settings (must be public or group-accessible)
+3. Ensure script is in correct location (LocalScript in character)
+
+### GUI Not Appearing
+
+1. Verify the script is running on the client
+2. Check that PlayerGui is accessible
+3. Ensure no other scripts are interfering
+
+### Sounds Continue After Death
+
+This is expected behavior. The script properly handles respawns and reconnects all events.
+
+## 📜 Credits
+
+- **Original Script**: Bangyan © 2025
+- **Customization**: ItoRenz00
+- **Sound Assets**: Various SpongeBob SquarePants audio sources
+
+## 📄 License
+
+This script is protected by its original author. Please maintain credit headers when sharing or modifying.
+
+## 🤝 Contributing
+
+When contributing improvements:
+
+1. Maintain code formatting and structure
+2. Keep credit headers intact
+3. Document any new features
+4. Test on both desktop and mobile platforms
+
+## ⚠️ Disclaimer
+
+This script is for educational and entertainment purposes. Ensure you have proper permissions for any audio assets used.
+
+## 📞 Support
+
+For issues or questions:
+- Check the Troubleshooting section
+- Review code comments for implementation details
+- Test with default sound IDs first to verify functionality
+
+---
+
+**Version**: 1.0  
+**Last Updated**: 2025  
+**Compatibility**: Roblox (Current Version)
