@@ -1,36 +1,50 @@
+--[[
+    Custom Sound Script for Roblox
+    Original by: Bangyan © 2025
+    Custom by: ItoRenz00
+    
+    Features:
+    - Custom jump sounds
+    - Multiple walk sound options (Squidward, SpongeBob, Mr. Krabs)
+    - Mobile-friendly GUI
+    - Persistent settings across respawns
+    - Smooth animations and transitions
+]]
+
+-- ============ PLAYER REFERENCES ============
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local rootPart = character:WaitForChild("HumanoidRootPart")
 
--- ID bunyi
+-- ============ SOUND IDS ============
 local JUMP_ID = "rbxassetid://115680913237541"
 local WALK_ID = "rbxassetid://6929242058"
 local SPONGEBOB_WALK_ID = "rbxassetid://5948749731"
 local MRKRAB_WALK_ID = "rbxassetid://3426632334"
 
--- 🛡️ Pemeriksa asal
+-- ============ SCRIPT PROTECTION ============
 if not script:FindFirstChild("BangyanSignature") then
     local tag = Instance.new("StringValue")
     tag.Name = "BangyanSignature"
-    tag.Value = "Protected by Bangyan © 2025"
+    tag.Value = "Protected by Bangyan © 2025 | Custom by: ItoRenz00"
     tag.Parent = script
 end
 
 task.spawn(function()
     while task.wait(10) do
         if not script:FindFirstChild("BangyanSignature") then
-            warn("⚠️ Skrip ini asalnya dibuat oleh Bangyan. Sila letak semula kredit asal.")
+            warn("⚠️ Original script by Bangyan | Customized by ItoRenz00")
         end
     end
 end)
 
--- ============ MANAGE DEFAULT SOUNDS ============
+-- ============ DEFAULT SOUND MANAGEMENT ============
 local defaultJumpSound = nil
 local defaultFootstepSound = nil
 
 local function hideDefaultSounds(char)
-    -- Cari dan sembunyikan (jangan hapus) suara default jump
+    -- Hide default jump sound
     if char:FindFirstChild("Jump") then
         defaultJumpSound = char:FindFirstChild("Jump")
         defaultJumpSound.Volume = 0
@@ -40,30 +54,25 @@ local function hideDefaultSounds(char)
         defaultJumpSound.Volume = 0
     end
     
-    -- Cari suara default footstep/running
+    -- Hide default footstep/running sounds
     for _, sound in pairs(char:GetDescendants()) do
-        if sound:IsA("Sound") then
-            if sound.Name == "Footstep" or sound.Name == "Running" then
-                defaultFootstepSound = sound
-                defaultFootstepSound.Volume = 0
-            end
+        if sound:IsA("Sound") and (sound.Name == "Footstep" or sound.Name == "Running") then
+            defaultFootstepSound = sound
+            defaultFootstepSound.Volume = 0
         end
     end
     
     for _, sound in pairs(humanoid:GetChildren()) do
-        if sound:IsA("Sound") then
-            if sound.Name == "Footstep" or sound.Name == "Running" then
-                defaultFootstepSound = sound
-                defaultFootstepSound.Volume = 0
-            end
+        if sound:IsA("Sound") and (sound.Name == "Footstep" or sound.Name == "Running") then
+            defaultFootstepSound = sound
+            defaultFootstepSound.Volume = 0
         end
     end
 end
 
--- Jalankan hide untuk character pertama
 hideDefaultSounds(character)
 
--- ============ JUMP SOUND SETUP ============
+-- ============ CUSTOM SOUND SETUP ============
 local jumpSound = Instance.new("Sound")
 jumpSound.Name = "CustomJump"
 jumpSound.SoundId = JUMP_ID
@@ -71,7 +80,6 @@ jumpSound.Volume = 1
 jumpSound.Looped = false
 jumpSound.Parent = rootPart
 
--- ============ WALK SOUND SETUP ============
 local walkSound = Instance.new("Sound")
 walkSound.Name = "CustomFootstep"
 walkSound.SoundId = WALK_ID
@@ -82,7 +90,7 @@ walkSound.RollOffMaxDistance = 100
 walkSound.RollOffMinDistance = 10
 walkSound.Parent = rootPart
 
--- ============ STATUS VARIABLES ============
+-- ============ STATE VARIABLES ============
 local jumpEnabled = true
 local walkEnabled = true
 local isWalking = false
@@ -92,49 +100,46 @@ local MIN_JUMP_INTERVAL = 0.05
 local currentWalkSound = "SQUID"
 local allSoundsEnabled = true
 
--- Variabel untuk menyimpan status sebelum respawn
+-- Saved states for respawn
 local savedJumpEnabled = jumpEnabled
 local savedWalkEnabled = walkEnabled
 local savedCurrentWalkSound = currentWalkSound
 local savedAllSoundsEnabled = allSoundsEnabled
 
+-- Connection variables
 local jumpConnection = nil
 local runConnection = nil
 local stateConnection = nil
 local heartbeatConnection = nil
 
--- ============ JUMP FUNCTIONS ============
+-- ============ JUMP HANDLER ============
 local function onJump(jumping)
-    if jumping then
-        local currentTime = tick()
-        
-        if currentTime - lastJumpTime >= MIN_JUMP_INTERVAL then
-            lastJumpTime = currentTime
-            
-            -- Jika custom jump diaktifkan
-            if jumpEnabled and allSoundsEnabled then
-                if jumpSound.IsPlaying then
-                    jumpSound:Stop()
-                end
-                
-                -- Matikan suara default
-                if defaultJumpSound then
-                    defaultJumpSound.Volume = 0
-                end
-                
-                task.spawn(function()
-                    jumpSound.TimePosition = 0
-                    jumpSound:Play()
-                end)
-                -- Jika custom jump dimatikan, aktifkan suara default
-            elseif defaultJumpSound then
-                defaultJumpSound.Volume = 1
-            end
+    if not jumping then return end
+    
+    local currentTime = tick()
+    if currentTime - lastJumpTime < MIN_JUMP_INTERVAL then return end
+    
+    lastJumpTime = currentTime
+    
+    if jumpEnabled and allSoundsEnabled then
+        if jumpSound.IsPlaying then
+            jumpSound:Stop()
         end
+        
+        if defaultJumpSound then
+            defaultJumpSound.Volume = 0
+        end
+        
+        task.spawn(function()
+            jumpSound.TimePosition = 0
+            jumpSound:Play()
+        end)
+    elseif defaultJumpSound then
+        defaultJumpSound.Volume = 1
     end
 end
 
--- ============ WALK FUNCTIONS ============
+-- ============ WALK HANDLERS ============
 local function ensureSoundPlaying()
     if walkEnabled and allSoundsEnabled and isWalking and not isJumping then
         if not walkSound.IsPlaying then
@@ -146,33 +151,19 @@ local function ensureSoundPlaying()
 end
 
 local function handleWalking(speed)
-    if not allSoundsEnabled then
+    if not allSoundsEnabled or not walkEnabled then
         isWalking = false
         if walkSound.IsPlaying then
             walkSound:Stop()
         end
-        -- Aktifkan suara default
         if defaultFootstepSound then
-            defaultFootstepSound.Volume = 1
-        end
-        return 
-    end
-    
-    if not walkEnabled then
-        isWalking = false
-        if walkSound.IsPlaying then
-            walkSound:Stop()
-        end
-        -- Aktifkan suara default
-        if defaultFootstepSound then
-            defaultFootstepSound.Volume = 1
+            defaultFootstepSound.Volume = not allSoundsEnabled and 1 or 0
         end
         return
     end
     
     if speed > 2 and humanoid.FloorMaterial ~= Enum.Material.Air then
         isWalking = true
-        -- Matikan suara default
         if defaultFootstepSound then
             defaultFootstepSound.Volume = 0
         end
@@ -184,15 +175,11 @@ local function handleWalking(speed)
         if walkSound.IsPlaying then
             walkSound:Stop()
         end
-        -- Aktifkan suara default
-        if defaultFootstepSound then
-            defaultFootstepSound.Volume = 1
-        end
     end
 end
 
 local function handleStateChanged(oldState, newState)
-    if newState == Enum.HumanoidStateType.Jumping then
+    if newState == Enum.HumanoidStateType.Jumping or newState == Enum.HumanoidStateType.Freefall then
         isJumping = true
         if walkSound.IsPlaying then
             walkSound:Stop()
@@ -201,11 +188,6 @@ local function handleStateChanged(oldState, newState)
         isJumping = false
         if isWalking and walkEnabled and allSoundsEnabled then
             walkSound:Play()
-        end
-    elseif newState == Enum.HumanoidStateType.Freefall then
-        isJumping = true
-        if walkSound.IsPlaying then
-            walkSound:Stop()
         end
     end
 end
@@ -227,16 +209,16 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- ============ MAIN TOGGLE BUTTON ============
+-- ============ TOGGLE BUTTON CONTAINER ============
 local toggleContainer = Instance.new("Frame")
 toggleContainer.Name = "ToggleContainer"
-toggleContainer.Size = isMobile and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 32, 0, 32)
+toggleContainer.Size = UDim2.new(0, 32, 0, 32)
 toggleContainer.Position = UDim2.new(0, 10, 0, 10)
 toggleContainer.BackgroundTransparency = 1
 toggleContainer.Parent = screenGui
 
 local containerCorner = Instance.new("UICorner")
-containerCorner.CornerRadius = isMobile and UDim.new(0, 10) or UDim.new(0, 10)
+containerCorner.CornerRadius = UDim.new(0, 10)
 containerCorner.Parent = toggleContainer
 
 local stroke = Instance.new("UIStroke")
@@ -248,25 +230,24 @@ stroke.Parent = toggleContainer
 local toggleButton = Instance.new("TextButton")
 toggleButton.Name = "MainToggleBtn"
 toggleButton.Size = UDim2.new(1, 0, 1, 0)
-toggleButton.Position = UDim2.new(0, 0, 0, 0)
 toggleButton.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
 toggleButton.BorderSizePixel = 0
 toggleButton.Text = "👣"
-toggleButton.TextSize = isMobile and 18 or 18
+toggleButton.TextSize = 18
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.ZIndex = 10
 toggleButton.Parent = toggleContainer
 
 local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = isMobile and UDim.new(0, 10) or UDim.new(0, 10)
+buttonCorner.CornerRadius = UDim.new(0, 10)
 buttonCorner.Parent = toggleButton
 
--- ============ PANEL MENU ============
+-- ============ MENU PANEL ============
 local menuPanel = Instance.new("Frame")
 menuPanel.Name = "MenuPanel"
-menuPanel.Size = isMobile and UDim2.new(0, 86, 0, 140) or UDim2.new(0, 86, 0, 140)
-menuPanel.Position = isMobile and UDim2.new(0, 45, 0, 10) or UDim2.new(0, 45, 0, 10)
+menuPanel.Size = UDim2.new(0, 86, 0, 140)
+menuPanel.Position = UDim2.new(0, 45, 0, 10)
 menuPanel.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
 menuPanel.BorderSizePixel = 0
 menuPanel.Visible = false
@@ -283,15 +264,15 @@ menuStroke.Thickness = 1
 menuStroke.Transparency = 0.5
 menuStroke.Parent = menuPanel
 
--- ============ MENU BUTTONS ============
-local function createMenuButton(name, icon, yPos)
+-- ============ MENU BUTTON CREATOR ============
+local function createMenuButton(name, yPos)
     local btn = Instance.new("TextButton")
     btn.Name = name
-    btn.Size = isMobile and UDim2.new(1, -8, 0, 22) or UDim2.new(1, -8, 0, 22)
+    btn.Size = UDim2.new(1, -8, 0, 22)
     btn.Position = UDim2.new(0, 4, 0, yPos)
     btn.BackgroundColor3 = Color3.fromRGB(52, 73, 94)
     btn.BorderSizePixel = 0
-    btn.TextSize = isMobile and 9 or 9
+    btn.TextSize = 9
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.GothamSemibold
     btn.ZIndex = 10
@@ -304,27 +285,27 @@ local function createMenuButton(name, icon, yPos)
     return btn
 end
 
-local jumpBtn = createMenuButton("JumpBtn", "🔊", 3)
+local jumpBtn = createMenuButton("JumpBtn", 3)
 jumpBtn.Text = "UNYAH"
 jumpBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
 
-local walkBtn = createMenuButton("WalkBtn", "👣", isMobile and 28 or 28)
+local walkBtn = createMenuButton("WalkBtn", 28)
 walkBtn.Text = "SQUID"
 walkBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
 
-local spongebobBtn = createMenuButton("SpongebobBtn", "🧽", isMobile and 53 or 53)
+local spongebobBtn = createMenuButton("SpongebobBtn", 53)
 spongebobBtn.Text = "SPONGEBOB"
 spongebobBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
 
-local mrkrabBtn = createMenuButton("MrkrabBtn", "🦀", isMobile and 78 or 78)
+local mrkrabBtn = createMenuButton("MrkrabBtn", 78)
 mrkrabBtn.Text = "MR. KRAB"
 mrkrabBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
 
-local offBtn = createMenuButton("OffBtn", "🔇", isMobile and 103 or 103)
+local offBtn = createMenuButton("OffBtn", 103)
 offBtn.Text = "OFF"
 offBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
 
--- ============ MENU STATE MANAGEMENT ============
+-- ============ MENU TOGGLE FUNCTION ============
 local menuOpen = false
 local function toggleMenu()
     menuOpen = not menuOpen
@@ -332,30 +313,30 @@ local function toggleMenu()
     
     local tweenService = game:GetService("TweenService")
     local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local newColor = menuOpen and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(52, 152, 219)
     
-    if menuOpen then
-        menuPanel.Position = isMobile and UDim2.new(0, 45, 0, 10) or UDim2.new(0, 45, 0, 10)
-        local tween = tweenService:Create(toggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)})
-        tween:Play()
-    else
-        local tween = tweenService:Create(toggleButton, tweenInfo, {BackgroundColor3 = Color3.fromRGB(52, 152, 219)})
-        tween:Play()
-    end
+    tweenService:Create(toggleButton, tweenInfo, {BackgroundColor3 = newColor}):Play()
 end
 
--- ============ BUTTON EVENTS ============
+-- ============ BUTTON EVENT HANDLERS ============
 toggleButton.MouseButton1Click:Connect(toggleMenu)
 
 toggleButton.MouseButton1Down:Connect(function()
-    local tweenService = game:GetService("TweenService")
-    local rotateAnim = tweenService:Create(toggleButton, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 20})
-    rotateAnim:Play()
+    local tween = game:GetService("TweenService"):Create(
+        toggleButton, 
+        TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), 
+        {Rotation = 20}
+    )
+    tween:Play()
 end)
 
 toggleButton.MouseButton1Up:Connect(function()
-    local tweenService = game:GetService("TweenService")
-    local resetAnim = tweenService:Create(toggleButton, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Rotation = 0})
-    resetAnim:Play()
+    local tween = game:GetService("TweenService"):Create(
+        toggleButton, 
+        TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), 
+        {Rotation = 0}
+    )
+    tween:Play()
 end)
 
 jumpBtn.MouseButton1Click:Connect(function()
@@ -363,91 +344,55 @@ jumpBtn.MouseButton1Click:Connect(function()
     
     jumpEnabled = not jumpEnabled
     savedJumpEnabled = jumpEnabled
-    jumpBtn.Text = "UNYAH"
     
-    local tweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     local newColor = jumpEnabled and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
-    local tween = tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = newColor})
-    tween:Play()
+    game:GetService("TweenService"):Create(
+        jumpBtn, 
+        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+        {BackgroundColor3 = newColor}
+    ):Play()
 end)
 
-walkBtn.MouseButton1Click:Connect(function()
+local function switchWalkSound(soundType, soundId, button)
     if not allSoundsEnabled then return end
     
-    currentWalkSound = "SQUID"
+    currentWalkSound = soundType
     savedCurrentWalkSound = currentWalkSound
-    walkSound.SoundId = WALK_ID
+    walkSound.SoundId = soundId
     walkEnabled = true
     savedWalkEnabled = true
     
     local tweenService = game:GetService("TweenService")
     local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)})
-    tween:Play()
     
-    tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
+    -- Update button colors
+    tweenService:Create(button, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
     
+    for _, btn in pairs({walkBtn, spongebobBtn, mrkrabBtn, offBtn}) do
+        if btn ~= button then
+            tweenService:Create(btn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
+        end
+    end
+    
+    -- Restart sound if walking
     if isWalking then
         if walkSound.IsPlaying then
             walkSound:Stop()
         end
         walkSound:Play()
     end
+end
+
+walkBtn.MouseButton1Click:Connect(function()
+    switchWalkSound("SQUID", WALK_ID, walkBtn)
 end)
 
 spongebobBtn.MouseButton1Click:Connect(function()
-    if not allSoundsEnabled then return end
-    
-    currentWalkSound = "SPONGEBOB"
-    savedCurrentWalkSound = currentWalkSound
-    walkSound.SoundId = SPONGEBOB_WALK_ID
-    walkEnabled = true
-    savedWalkEnabled = true
-    
-    local tweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)})
-    tween:Play()
-    
-    tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    
-    if isWalking then
-        if walkSound.IsPlaying then
-            walkSound:Stop()
-        end
-        walkSound:Play()
-    end
+    switchWalkSound("SPONGEBOB", SPONGEBOB_WALK_ID, spongebobBtn)
 end)
 
 mrkrabBtn.MouseButton1Click:Connect(function()
-    if not allSoundsEnabled then return end
-    
-    currentWalkSound = "MRKRAB"
-    savedCurrentWalkSound = currentWalkSound
-    walkSound.SoundId = MRKRAB_WALK_ID
-    walkEnabled = true
-    savedWalkEnabled = true
-    
-    local tweenService = game:GetService("TweenService")
-    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)})
-    tween:Play()
-    
-    tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    
-    if isWalking then
-        if walkSound.IsPlaying then
-            walkSound:Stop()
-        end
-        walkSound:Play()
-    end
+    switchWalkSound("MRKRAB", MRKRAB_WALK_ID, mrkrabBtn)
 end)
 
 offBtn.MouseButton1Click:Connect(function()
@@ -460,100 +405,79 @@ offBtn.MouseButton1Click:Connect(function()
     if allSoundsEnabled then
         tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
         
-        if jumpEnabled then
-            tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-        else
-            tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
+        -- Restore button states
+        local jumpColor = jumpEnabled and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+        tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = jumpColor}):Play()
+        
+        -- Update walk buttons based on current sound
+        local activeWalkBtn = currentWalkSound == "SQUID" and walkBtn or 
+                              (currentWalkSound == "SPONGEBOB" and spongebobBtn or mrkrabBtn)
+        
+        for _, btn in pairs({walkBtn, spongebobBtn, mrkrabBtn}) do
+            local color = (btn == activeWalkBtn) and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+            tweenService:Create(btn, tweenInfo, {BackgroundColor3 = color}):Play()
         end
         
-        if currentWalkSound == "SQUID" then
-            tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-            tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-            tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        elseif currentWalkSound == "SPONGEBOB" then
-            tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-            tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-            tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        else
-            tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-            tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-            tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-        end
-        
-        -- Matikan suara default
-        if defaultJumpSound then
-            defaultJumpSound.Volume = 0
-        end
-        if defaultFootstepSound then
-            defaultFootstepSound.Volume = 0
-        end
+        -- Disable default sounds
+        if defaultJumpSound then defaultJumpSound.Volume = 0 end
+        if defaultFootstepSound then defaultFootstepSound.Volume = 0 end
         
         if isWalking and walkEnabled then
             walkSound:Play()
         end
     else
+        -- All custom sounds OFF
         tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-        tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
         
-        if jumpSound.IsPlaying then
-            jumpSound:Stop()
-        end
-        if walkSound.IsPlaying then
-            walkSound:Stop()
+        for _, btn in pairs({jumpBtn, walkBtn, spongebobBtn, mrkrabBtn}) do
+            tweenService:Create(btn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
         end
         
-        -- Aktifkan suara default
-        if defaultJumpSound then
-            defaultJumpSound.Volume = 1
-        end
-        if defaultFootstepSound then
-            defaultFootstepSound.Volume = 1
-        end
+        if jumpSound.IsPlaying then jumpSound:Stop() end
+        if walkSound.IsPlaying then walkSound:Stop() end
+        
+        -- Enable default sounds
+        if defaultJumpSound then defaultJumpSound.Volume = 1 end
+        if defaultFootstepSound then defaultFootstepSound.Volume = 1 end
     end
 end)
 
 -- ============ HOVER EFFECTS ============
 local function addHoverEffect(btn)
     btn.MouseEnter:Connect(function()
-        local tweenService = game:GetService("TweenService")
-        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = tweenService:Create(btn, tweenInfo, {BackgroundTransparency = 0.1})
-        tween:Play()
+        game:GetService("TweenService"):Create(
+            btn, 
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+            {BackgroundTransparency = 0.1}
+        ):Play()
     end)
     
     btn.MouseLeave:Connect(function()
-        local tweenService = game:GetService("TweenService")
-        local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = tweenService:Create(btn, tweenInfo, {BackgroundTransparency = 0})
-        tween:Play()
+        game:GetService("TweenService"):Create(
+            btn, 
+            TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
+            {BackgroundTransparency = 0}
+        ):Play()
     end)
 end
 
-addHoverEffect(jumpBtn)
-addHoverEffect(walkBtn)
-addHoverEffect(spongebobBtn)
-addHoverEffect(mrkrabBtn)
-addHoverEffect(offBtn)
+for _, btn in pairs({jumpBtn, walkBtn, spongebobBtn, mrkrabBtn, offBtn}) do
+    addHoverEffect(btn)
+end
 
--- ============ RESPAWN CLEANUP ============
+-- ============ RESPAWN HANDLER ============
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     humanoid = character:WaitForChild("Humanoid")
     rootPart = character:WaitForChild("HumanoidRootPart")
     
-    -- Hide default sounds untuk character baru
     hideDefaultSounds(character)
     
-    if jumpSound then
-        jumpSound:Destroy()
-    end
-    if walkSound then
-        walkSound:Destroy()
-    end
+    -- Cleanup old sounds
+    if jumpSound then jumpSound:Destroy() end
+    if walkSound then walkSound:Destroy() end
     
+    -- Recreate sounds
     jumpSound = Instance.new("Sound")
     jumpSound.Name = "CustomJump"
     jumpSound.SoundId = JUMP_ID
@@ -561,9 +485,12 @@ player.CharacterAdded:Connect(function(newChar)
     jumpSound.Looped = false
     jumpSound.Parent = rootPart
     
+    local currentSoundId = currentWalkSound == "SPONGEBOB" and SPONGEBOB_WALK_ID or 
+                           (currentWalkSound == "MRKRAB" and MRKRAB_WALK_ID or WALK_ID)
+    
     walkSound = Instance.new("Sound")
     walkSound.Name = "CustomFootstep"
-    walkSound.SoundId = currentWalkSound == "SPONGEBOB" and SPONGEBOB_WALK_ID or (currentWalkSound == "MRKRAB" and MRKRAB_WALK_ID or WALK_ID)
+    walkSound.SoundId = currentSoundId
     walkSound.Volume = 1
     walkSound.Looped = true
     walkSound.PlaybackSpeed = 1
@@ -571,58 +498,43 @@ player.CharacterAdded:Connect(function(newChar)
     walkSound.RollOffMinDistance = 10
     walkSound.Parent = rootPart
     
+    -- Reset state
     lastJumpTime = 0
     isWalking = false
     isJumping = false
     
-    -- Restore saved status
+    -- Restore saved settings
     jumpEnabled = savedJumpEnabled
     walkEnabled = savedWalkEnabled
     currentWalkSound = savedCurrentWalkSound
     allSoundsEnabled = savedAllSoundsEnabled
     
-    if jumpConnection then
-        jumpConnection:Disconnect()
-    end
-    if runConnection then
-        runConnection:Disconnect()
-    end
-    if stateConnection then
-        stateConnection:Disconnect()
-    end
-    if heartbeatConnection then
-        heartbeatConnection:Disconnect()
-    end
+    -- Reconnect events
+    if jumpConnection then jumpConnection:Disconnect() end
+    if runConnection then runConnection:Disconnect() end
+    if stateConnection then stateConnection:Disconnect() end
+    if heartbeatConnection then heartbeatConnection:Disconnect() end
     
     jumpConnection = humanoid.Jumping:Connect(onJump)
     runConnection = humanoid.Running:Connect(handleWalking)
     stateConnection = humanoid.StateChanged:Connect(handleStateChanged)
     heartbeatConnection = game:GetService("RunService").Heartbeat:Connect(ensureSoundPlaying)
     
-    -- Update button UI berdasarkan saved status
+    -- Update UI
     local tweenService = game:GetService("TweenService")
     local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
-    -- Update jump button
     local jumpColor = jumpEnabled and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
     tweenService:Create(jumpBtn, tweenInfo, {BackgroundColor3 = jumpColor}):Play()
     
-    -- Update walk button
-    if currentWalkSound == "SQUID" then
-        tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-        tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    elseif currentWalkSound == "SPONGEBOB" then
-        tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
-        tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-    else
-        tweenService:Create(walkBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(spongebobBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(231, 76, 60)}):Play()
-        tweenService:Create(mrkrabBtn, tweenInfo, {BackgroundColor3 = Color3.fromRGB(46, 204, 113)}):Play()
+    local activeWalkBtn = currentWalkSound == "SQUID" and walkBtn or 
+                          (currentWalkSound == "SPONGEBOB" and spongebobBtn or mrkrabBtn)
+    
+    for _, btn in pairs({walkBtn, spongebobBtn, mrkrabBtn}) do
+        local color = (btn == activeWalkBtn) and Color3.fromRGB(46, 204, 113) or Color3.fromRGB(231, 76, 60)
+        tweenService:Create(btn, tweenInfo, {BackgroundColor3 = color}):Play()
     end
     
-    -- Update off button
     local offColor = allSoundsEnabled and Color3.fromRGB(231, 76, 60) or Color3.fromRGB(46, 204, 113)
     tweenService:Create(offBtn, tweenInfo, {BackgroundColor3 = offColor}):Play()
     
@@ -630,24 +542,12 @@ player.CharacterAdded:Connect(function(newChar)
     menuPanel.Visible = false
 end)
 
--- ============ CLEANUP ON DEATH ============
+-- ============ CLEANUP ON CHARACTER REMOVAL ============
 player.CharacterRemoving:Connect(function()
-    if jumpConnection then
-        jumpConnection:Disconnect()
-    end
-    if runConnection then
-        runConnection:Disconnect()
-    end
-    if stateConnection then
-        stateConnection:Disconnect()
-    end
-    if heartbeatConnection then
-        heartbeatConnection:Disconnect()
-    end
-    if jumpSound then
-        jumpSound:Destroy()
-    end
-    if walkSound then
-        walkSound:Destroy()
-    end
+    if jumpConnection then jumpConnection:Disconnect() end
+    if runConnection then runConnection:Disconnect() end
+    if stateConnection then stateConnection:Disconnect() end
+    if heartbeatConnection then heartbeatConnection:Disconnect() end
+    if jumpSound then jumpSound:Destroy() end
+    if walkSound then walkSound:Destroy() end
 end)
